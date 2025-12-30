@@ -57,6 +57,18 @@ const uploadFile = async (selectedFile) => {
   }
 }
 
+const downloadQrCode = () => {
+  const canvas = document.querySelector('.qr-container canvas')
+  if (canvas) {
+    const link = document.createElement('a')
+    link.download = `qrcode-${file.value.name}.png`
+    link.href = canvas.toDataURL()
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+}
+
 const reset = () => {
   file.value = null
   result.value = null
@@ -109,8 +121,11 @@ const reset = () => {
         
         <div class="info">
           <p class="filename">{{ file.name }}</p>
-          <a :href="result.download_url" target="_blank" class="download-btn">直接下载</a>
-          <button @click="reset" class="reset-btn">上传新文件</button>
+          <div class="actions">
+            <a :href="result.download_url" target="_blank" class="download-btn">直接下载文件</a>
+            <button @click="downloadQrCode" class="action-btn">保存二维码</button>
+            <button @click="reset" class="reset-btn">上传新文件</button>
+          </div>
         </div>
         
         <p class="expire-hint">文件将在 1 小时后自动销毁</p>
@@ -197,6 +212,13 @@ header p {
   color: #555;
 }
 
+.actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 .download-btn {
   background: #42b883;
   color: white;
@@ -211,13 +233,30 @@ header p {
   transform: scale(1.05);
 }
 
+.action-btn {
+  background: #35495e;
+  color: white;
+  border: none;
+  padding: 0.8rem 2rem;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: transform 0.2s;
+}
+
+.action-btn:hover {
+  transform: scale(1.05);
+  background: #2c3e50;
+}
+
 .reset-btn {
   background: transparent;
   border: 1px solid #ddd;
-  padding: 0.5rem 1.5rem;
+  padding: 0.8rem 2rem;
   border-radius: 25px;
   cursor: pointer;
   color: #666;
+  font-weight: bold;
 }
 
 .reset-btn:hover {

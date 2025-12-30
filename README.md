@@ -5,84 +5,88 @@
 [![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 
 > **即传即扫，阅后即焚**。一个基于 Go + Vue 3 的极简文件传输系统。
-> Zero-config file sharing for local networks.
+> 这是一个“保姆级”教程，旨在帮助任何人（哪怕是 6 岁的小朋友，如果在父母陪同下）也能成功部署。
+
+---
+
+## 📚 目录
+
+1.  [✨ 核心特性](#-核心特性)
+2.  [🛠 第一步：准备工具（环境安装）](#-第一步准备工具环境安装)
+3.  [📦 第二步：下载代码](#-第二步下载代码)
+4.  [⚙️ 第三步：关键配置（必看！）](#️-第三步关键配置必看)
+5.  [🚀 第四步：一键启动（Windows/Linux/Mac）](#-第四步一键启动windowslinuxmac)
+6.  [❓ 常见问题 (FAQ)](#-常见问题-faq)
+
+---
 
 ## ✨ 核心特性
 
-- 🚀 **极速传输**：基于 Go Gin 框架的高性能后端，支持大文件流式上传。
-- 📱 **扫码即下**：自动生成二维码，手机无需安装 App 即可下载。
-- 🔒 **阅后即焚**：
-  - **时间限制**：默认 1 小时后自动销毁文件。
-  - **次数限制**：支持配置下载次数（如：限制 5 次下载后自动删除）。
-- 🎨 **极简体验**：Vue 3 打造的丝滑拖拽上传界面。
-- 🛠 **高度可配**：通过配置文件自定义端口、存储路径、过期策略。
-- 📦 **单端口部署**：后端自动集成前端静态资源，对外仅需开放一个端口。
+- **极速传输**：支持大文件拖拽上传，速度飞快。
+- **扫码即下**：自动生成二维码，手机扫一扫就能下载。
+- **阅后即焚**：文件默认 1 小时后自动删除，或者下载 5 次后自动消失。
+- **极简部署**：只需一个端口，就能搞定所有功能。
 
-## 🏗 架构说明
+---
 
-- **Backend**: Go (Gin Web Framework)
-- **Frontend**: Vue 3 + Vite
-- **Storage**: 本地文件系统 (Ephemeral Storage)
+## 🛠 第一步：准备工具（环境安装）
 
-## 🚀 快速开始
+在开始之前，你需要给电脑安装两个“超能力”工具：**Go** 和 **Node.js**。
 
-### 1. 环境准备
-- Go 1.20+
-- Node.js 16+
+### 1. 安装 Go 语言 (后端引擎)
+*   **下载地址**：[https://go.dev/dl/](https://go.dev/dl/)
+*   **安装方法**：下载对应系统的安装包（Windows 选 `.msi`，Mac 选 `.pkg`），一路点击“下一步”直到完成。
+*   **验证安装**：打开终端（Windows 按 `Win+R` 输入 `cmd`），输入：
+    ```bash
+    go version
+    ```
+    如果显示类似 `go version go1.23.x ...`，说明安装成功！
 
-### 2. 生产环境部署 (推荐)
+### 2. 安装 Node.js (前端工厂)
+*   **下载地址**：[https://nodejs.org/](https://nodejs.org/)
+*   **版本选择**：推荐下载 **LTS (长期支持版)**。
+*   **安装方法**：同样是一路“下一步”。
+*   **验证安装**：在终端输入：
+    ```bash
+    node -v
+    npm -v
+    ```
+    如果有版本号跳出来，说明准备就绪！
 
-这是最简单、最稳定的运行方式，适合局域网或服务器部署。
-
-#### 第一步：构建前端
+### 3. 配置 Go 加速器 (中国大陆用户必做 🇨🇳)
+为了让下载依赖包像火箭一样快，请在终端执行以下命令：
 ```bash
-cd frontend
-npm install
-npm run build
-```
-构建完成后，会在 `frontend` 目录下生成一个 `dist` 文件夹。
-
-#### 第二步：整合资源
-将生成的 `dist` 文件夹**完整复制**到 `backend` 目录下。
-目录结构应如下所示：
-```
-backend/
-├── main.go
-├── config.json
-├── uploads/
-└── dist/       <-- 前端构建产物
-    ├── index.html
-    └── assets/
+go env -w GOPROXY=https://goproxy.cn,direct
 ```
 
-#### 第三步：启动服务
-```bash
-cd backend
-go mod tidy
-go run main.go
-# 或者编译后运行: go build -o server && ./server
-```
+---
 
-此时，访问 `http://localhost:8080` 即可看到完整应用。
+## 📦 第二步：下载代码
 
-### 3. 开发环境运行 (调试用)
+如果你会用 Git，直接 Clone；如果不会，直接点击 GitHub 页面上的 **"Code" -> "Download ZIP"**，然后解压到一个文件夹里。
 
-如果你需要修改代码，可以分别启动前后端：
+假设你解压到了 `D:\snap-share`。
 
-*   **后端**: `cd backend && go run main.go` (运行在 :8080)
-*   **前端**: `cd frontend && npm run dev` (运行在 :5173，自动代理 API 到后端)
+---
 
-## ⚙️ 首次启动配置 (Configuration)
+## ⚙️ 第三步：关键配置（必看！）
 
-在 `backend` 目录下创建或修改 `config.json` 文件。
+这是最关键的一步！为了让你的手机能扫描二维码下载，我们需要告诉程序你的电脑 IP 是什么。
 
-> ⚠️ **重要提示**：为了让手机能扫描二维码下载，你**必须**修改 `base_url`。
+1.  进入 `backend` 文件夹。
+2.  找到 `config.json` 文件，用记事本或代码编辑器打开。
+3.  找到 `"base_url"` 这一行。
 
+**如何查看本机 IP？**
+*   **Windows**: 打开终端，输入 `ipconfig`，找到“IPv4 地址”（通常是 `192.168.x.x`）。
+*   **Mac/Linux**: 打开终端，输入 `ifconfig` 或 `ip a`。
+
+**修改配置：**
 ```json
 {
   "server": {
     "port": ":8080",
-    "base_url": "http://192.168.1.100:8080"  // <--- 修改这里！
+    "base_url": "http://192.168.1.100:8080"  <-- 把这里改成你的 IP！
   },
   "storage": {
     "upload_dir": "./uploads",
@@ -93,26 +97,66 @@ go run main.go
   }
 }
 ```
+> **注意**：不要忘了后面的 `:8080` 端口号！
 
-### 关键配置项说明
+---
 
-| 字段 | 说明 | 推荐值 |
-| :--- | :--- | :--- |
-| `server.base_url` | **核心配置**。生成二维码时使用的基础 URL。**必须修改为局域网 IP 或公网域名**，否则手机扫码后无法访问。 | `http://<你的IP>:8080` |
-| `server.port` | 后端监听端口。 | `:8080` |
-| `storage.static_dir` | 前端静态文件目录。如果配置为空，则仅作为 API 服务器运行。 | `./dist` |
-| `storage.default_download_limit` | 最大下载次数。超过次数后文件立即销毁。设为 0 则无限制。 | `5` |
-| `storage.file_ttl_minutes` | 文件自动过期时间 (分钟)。 | `60` |
+## 🚀 第四步：一键启动（Windows/Linux/Mac）
 
-## 🤝 贡献指南
+我们采用最简单的“生产环境部署”模式，分为三个小动作：
 
-欢迎提交 Issue 和 Pull Request！
+### 动作 1：构建前端页面
+打开终端，进入 `frontend` 文件夹：
+```bash
+cd frontend
+npm install   # 安装依赖（第一次运行需要，可能要等几分钟）
+npm run build # 开始构建
+```
+完成后，你会发现 `frontend` 目录下多了一个 `dist` 文件夹。
 
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 提交 Pull Request
+### 动作 2：搬运素材
+将刚刚生成的 `dist` 文件夹，**整个复制**到 `backend` 文件夹里。
+确保目录结构是这样的：
+```
+backend/
+├── main.go
+├── config.json
+├── dist/       <-- 这里面有 index.html
+└── ...
+```
+
+### 动作 3：启动引擎
+打开终端，进入 `backend` 文件夹：
+```bash
+cd backend
+go mod tidy     # 下载 Go 依赖（第一次运行需要）
+go run main.go  # 启动！
+```
+
+当看到 `Server starting on :8080` 时，恭喜你，成功了！🎉
+
+👉 **打开浏览器访问**：[http://localhost:8080](http://localhost:8080)
+
+---
+
+## ❓ 常见问题 (FAQ)
+
+**Q: 手机扫码后打不开？**
+A: 请检查：
+1.  手机和电脑是否连接了**同一个 Wi-Fi**？
+2.  `config.json` 里的 IP 地址填对了吗？
+3.  电脑防火墙是否拦截了 8080 端口？（尝试临时关闭防火墙测试）
+
+**Q: 怎么修改文件保存时间？**
+A: 修改 `config.json` 里的 `file_ttl_minutes`（分钟数）。
+
+**Q: 我想限制下载次数？**
+A: 修改 `default_download_limit`，设为 `0` 表示不限制。
+
+**Q: 下次启动还要这么麻烦吗？**
+A: 不需要！只要不修改前端代码，下次只需要执行 **动作 3**（`go run main.go`）即可。
+
+---
 
 ## 📄 开源协议
 
