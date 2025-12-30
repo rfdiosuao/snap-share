@@ -4,4 +4,11 @@ import vue from '@vitejs/plugin-vue'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [vue()],
+  server: {
+    proxy: {
+      '/upload': 'http://localhost:8080',
+      '/download': 'http://localhost:8080',
+      '/info': 'http://localhost:8080'
+    }
+  }
 })

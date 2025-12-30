@@ -1,12 +1,13 @@
 {
   "server": {
     "port": ":8080",
-    "base_url": "http://localhost:8080"
+    "base_url": "http://111.170.33.7:45586"
   },
   "storage": {
     "upload_dir": "./uploads",
     "max_file_size_mb": 100,
     "file_ttl_minutes": 60,
-    "default_download_limit": 5
+    "default_download_limit": 5,
+    "static_dir": "./dist"
   }
 }

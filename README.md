@@ -16,6 +16,7 @@
   - **次数限制**：支持配置下载次数（如：限制 5 次下载后自动删除）。
 - 🎨 **极简体验**：Vue 3 打造的丝滑拖拽上传界面。
 - 🛠 **高度可配**：通过配置文件自定义端口、存储路径、过期策略。
+- 📦 **单端口部署**：后端自动集成前端静态资源，对外仅需开放一个端口。
 
 ## 🏗 架构说明
 
@@ -29,68 +30,79 @@
 - Go 1.20+
 - Node.js 16+
 
-### 2. 启动后端
+### 2. 生产环境部署 (推荐)
 
+这是最简单、最稳定的运行方式，适合局域网或服务器部署。
+
+#### 第一步：构建前端
+```bash
+cd frontend
+npm install
+npm run build
+```
+构建完成后，会在 `frontend` 目录下生成一个 `dist` 文件夹。
+
+#### 第二步：整合资源
+将生成的 `dist` 文件夹**完整复制**到 `backend` 目录下。
+目录结构应如下所示：
+```
+backend/
+├── main.go
+├── config.json
+├── uploads/
+└── dist/       <-- 前端构建产物
+    ├── index.html
+    └── assets/
+```
+
+#### 第三步：启动服务
 ```bash
 cd backend
 go mod tidy
 go run main.go
+# 或者编译后运行: go build -o server && ./server
 ```
 
-后端服务将在 `http://localhost:8080` 启动。
+此时，访问 `http://localhost:8080` 即可看到完整应用。
 
-### 3. 启动前端
+### 3. 开发环境运行 (调试用)
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+如果你需要修改代码，可以分别启动前后端：
 
-前端页面将在 `http://localhost:5173` 启动。
+*   **后端**: `cd backend && go run main.go` (运行在 :8080)
+*   **前端**: `cd frontend && npm run dev` (运行在 :5173，自动代理 API 到后端)
 
-## ⚙️ 配置文件 (config.json)
+## ⚙️ 首次启动配置 (Configuration)
 
-在 `backend` 目录下创建 `config.json` 文件进行配置：
+在 `backend` 目录下创建或修改 `config.json` 文件。
+
+> ⚠️ **重要提示**：为了让手机能扫描二维码下载，你**必须**修改 `base_url`。
 
 ```json
 {
   "server": {
     "port": ":8080",
-    "base_url": "http://localhost:8080"
+    "base_url": "http://192.168.1.100:8080"  // <--- 修改这里！
   },
   "storage": {
     "upload_dir": "./uploads",
     "max_file_size_mb": 100,
     "file_ttl_minutes": 60,
-    "default_download_limit": 5
+    "default_download_limit": 5,
+    "static_dir": "./dist"
   }
 }
 ```
 
-| 字段 | 说明 | 默认值 |
+### 关键配置项说明
+
+| 字段 | 说明 | 推荐值 |
 | :--- | :--- | :--- |
-| `port` | 后端监听端口 | `:8080` |
-| `base_url` | 生成二维码的基础 URL (局域网请填 IP) | `http://localhost:8080` |
-| `max_file_size_mb` | 最大文件大小 (MB) | `100` |
-| `file_ttl_minutes` | 文件过期时间 (分钟) | `60` |
-| `default_download_limit` | 最大下载次数 (0 为无限) | `5` |
-
-## 📦 部署指南
-
-### 编译后端
-```bash
-cd backend
-go build -o snap-share-server main.go
-```
-
-### 构建前端
-```bash
-cd frontend
-npm run build
-```
-
-将构建好的前端静态文件 (`dist` 目录) 部署到 Nginx 或集成到 Go 后端中即可。
+| `server.base_url` | **核心配置**。生成二维码时使用的基础 URL。**必须修改为局域网 IP 或公网域名**，否则手机扫码后无法访问。 | `http://<你的IP>:8080` |
+| `server.port` | 后端监听端口。 | `:8080` |
+| `storage.static_dir` | 前端静态文件目录。如果配置为空，则仅作为 API 服务器运行。 | `./dist` |
+| `storage.default_download_limit` | 最大下载次数。超过次数后文件立即销毁。设为 0 则无限制。 | `5` |
+| `storage.file_ttl_minutes` | 文件自动过期时间 (分钟)。 | `60` |
 
 ## 🤝 贡献指南
 

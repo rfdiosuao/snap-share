@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -26,6 +27,7 @@ type Config struct {
 		MaxFileSizeMB        int64  `json:"max_file_size_mb"`
 		FileTTLMinutes       int    `json:"file_ttl_minutes"`
 		DefaultDownloadLimit int    `json:"default_download_limit"`
+		StaticDir            string `json:"static_dir"`
 	} `json:"storage"`
 }
 
@@ -63,6 +65,7 @@ func loadConfig() {
 		config.Storage.MaxFileSizeMB = 100
 		config.Storage.FileTTLMinutes = 60
 		config.Storage.DefaultDownloadLimit = 5
+		config.Storage.StaticDir = "./dist"
 		return
 	}
 	defer file.Close()
@@ -89,17 +92,67 @@ func main() {
 	r.Use(cors.New(corsConfig))
 
 	// Routes
-	// Set max multipart memory
 	r.MaxMultipartMemory = 8 << 20 // 8 MiB
+	
+	// API Routes
 	r.POST("/upload", handleUpload)
 	r.GET("/download/:id", handleDownload)
 	r.GET("/info/:id", handleInfo)
+
+	// Static Files Serving
+	if config.Storage.StaticDir != "" {
+		if _, err := os.Stat(config.Storage.StaticDir); err == nil {
+			log.Printf("Serving static files from %s", config.Storage.StaticDir)
+			
+			// Serve static files
+			r.Use(staticFileMiddleware(config.Storage.StaticDir))
+		} else {
+			log.Printf("Static directory %s not found, skipping static file serving", config.Storage.StaticDir)
+		}
+	}
 
 	// Start cleanup routine
 	go cleanupRoutine()
 
 	log.Printf("Server starting on %s", config.Server.Port)
 	r.Run(config.Server.Port)
+}
+
+func staticFileMiddleware(root string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		path := c.Request.URL.Path
+		
+		// Skip API routes
+		if strings.HasPrefix(path, "/upload") || 
+		   strings.HasPrefix(path, "/download/") || 
+		   strings.HasPrefix(path, "/info/") {
+			c.Next()
+			return
+		}
+
+		// Try to serve file
+		filePath := filepath.Join(root, path)
+		if info, err := os.Stat(filePath); err == nil && !info.IsDir() {
+			c.File(filePath)
+			c.Abort()
+			return
+		}
+
+		// Try index.html for root or SPA fallback
+		index := filepath.Join(root, "index.html")
+		if _, err := os.Stat(index); err == nil {
+			// If it's a direct file request that failed (e.g. style.css), don't fallback to index.html immediately unless we are sure.
+			// But for SPA, we usually fallback for non-API routes.
+			// Let's simple check: if no extension, serve index.html
+			if filepath.Ext(path) == "" {
+				c.File(index)
+				c.Abort()
+				return
+			}
+		}
+		
+		c.Next()
+	}
 }
 
 func handleUpload(c *gin.Context) {
@@ -142,6 +195,9 @@ func handleUpload(c *gin.Context) {
 	store.files[id] = meta
 	store.Unlock()
 
+	// Use relative URL if BaseURL is configured to be same host or simple path
+	// But user config might have full URL.
+	// For QR code, we need full URL.
 	downloadURL := fmt.Sprintf("%s/download/%s", config.Server.BaseURL, id)
 	
 	c.JSON(http.StatusOK, gin.H{
@@ -192,25 +248,9 @@ func handleDownload(c *gin.Context) {
 	}
 	store.Unlock()
 
-	// If we need to delete, we do it AFTER serving the file?
-	// Actually, if we delete the file now, we can't serve it.
-	// So we serve it, and if it was the last one, we might need a background cleanup or just delete it now?
-	// c.FileAttachment serves the file. If we delete it immediately, it might fail if it's large.
-	// Better approach: Keep it in map but mark as expired? Or just delete after serving.
-	// Gin's c.FileAttachment writes to response.
-	
 	c.FileAttachment(meta.Path, meta.OriginalName)
 
 	if shouldDelete {
-		// Wait a bit to ensure file is served? 
-		// Actually, FileAttachment doesn't block until done? It probably does.
-		// But to be safe on Windows (file locking), we might need to be careful.
-		// Let's just remove it from store (already done above) so no new downloads can start.
-		// The file on disk can be cleaned up by the cleanup routine or here.
-		// On Windows, you can't delete an open file.
-		// So we will let the cleanup routine handle it or try to delete it later.
-		// But we removed it from 'store', so it's effectively gone for new requests.
-		// Let's rely on cleanup routine or a deferred delete.
 		go func(path string) {
 			time.Sleep(10 * time.Second) // Give it time to finish sending
 			os.Remove(path)
