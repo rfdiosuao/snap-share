@@ -1,8 +1,10 @@
 # Snap & Share (闪传) ⚡️
 
 [![Go Version](https://img.shields.io/badge/go-1.23%2B-blue)](https://golang.org/)
+[中文](README.md) | [English](README.en.md)
+
 [![Vue Version](https://img.shields.io/badge/vue-3.x-green)](https://vuejs.org/)
-[![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
+![License](https://img.shields.io/badge/license-MIT-yellow)
 
 > **即传即扫，阅后即焚**。一个基于 Go + Vue 3 的极简文件传输系统。
 > 这是一个“保姆级”教程，旨在帮助任何人（哪怕是 6 岁的小朋友，如果在父母陪同下）也能成功部署。
@@ -160,4 +162,4 @@ A: 不需要！只要不修改前端代码，下次只需要执行 **动作 3**�
 
 ## 📄 开源协议
 
-本项目采用 [MIT License](LICENSE) 开源。
+项目 README 声明采用 MIT License；当前仓库尚未包含独立的 `LICENSE` 文件，分发前请补充或核对完整许可文本。
